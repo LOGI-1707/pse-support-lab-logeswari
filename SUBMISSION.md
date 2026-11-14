@@ -1,246 +1,123 @@
-# Submission
+# Submission – K. Logeswari
 
-- **Name:**
-- **Date submitted:**
-- **Repository link:**
-- **Total time spent (real time):**
+- Date: 14 November 2026
+- Repository link: To be added
+- Total time spent: Not accurately recorded
 
-> Replies below are drafts written on the **exercise clock** (Monday 16 November 2026, Asia/Dubai). Keep your real time in the time log at the end. Put screenshots, log excerpts and query output in `evidence/` and link to them.
+Date: 14 November 2026
 
-> **Required:** the Acknowledgement and Priority sections for **all five** items, and the full write-up (investigation log onwards) for **at least three** items of your choice. For an item you did not fully investigate, replace the remaining sections with "Not investigated — what I would check next: …".
+Note: All customer replies below are proposed drafts, not messages actually sent.
 
-- **Items I fully investigated, and why I chose them:**
+## 1. Oasis Builders
 
----
+**Acknowledgement:** Thank you for reporting this urgent issue. Please do not retry the complete workbook. We will reconcile the invoice statuses and ASP references and confirm which invoices were successfully submitted.
 
-## Incident 1 — `inbox/01-oasis-builders-upload-stuck.md`
+**Priority:** P1 provisional.
 
-### Acknowledgement
+**Justification:** Multiple upload attempts, duplicate errors and uncertainty about invoice delivery create month-end business risk.
 
-- **Sent at (exercise clock):**
-- **Reply:**
+**Investigation:** The import lifecycle and duplicate validation logic were reviewed. Runtime database and ASP records still need checking.
 
-> …
+**Root cause:** Not confirmed. Duplicate validation does not prove an invoice reached the ASP.
 
-### Priority and justification
+**Workaround:** Hold further uploads until invoice-level reconciliation is complete.
 
-- **Priority:**
-- **Why:**
-- **SLA deadlines I am working to** (first response / next update / resolution target):
+## 2. Marina Bay – API Restart
 
-### Investigation log
+**Acknowledgement:** We acknowledge the repeated API restarts and intermittent 502 errors. We are checking service health and invoices stuck in Validated status.
 
-| Time (exercise clock) | What I checked / did | What I found |
-|---|---|---|
-| | | |
+**Priority:** P1.
 
-Include dead ends and hypotheses you ruled out.
+**Justification:** Production API instability affects multiple customers and invoice submission.
 
-### Root cause
+**Investigation:** The alert reports three restarts within 15 minutes. Docker configuration shows a 128 MB API memory limit. Container logs were not available to confirm the restart cause.
 
-- **What happened:**
-- **Where** (component, `file:line`):
-- **Why it happens:**
-- **Evidence** (Grafana panels or queries, log lines, database queries, code references — link to `evidence/`):
-- **Confidence and open questions:**
+**Root cause:** Not confirmed. Memory pressure is a hypothesis, not a proven cause.
 
-### Customer resolution reply OR escalation note
+**Workaround:** Avoid repeated uploads. Reconcile existing invoices before retrying.
 
-- **Which one and why:**
+## 3. Al Noor Fuel – BR-CO-15
 
-> …
+**Acknowledgement:** Thank you for sharing the workbook. We reviewed the net, VAT and gross calculation logic and identified a possible rounding inconsistency.
 
-(For an escalation, use the template in [docs/escalation-policy.md](docs/escalation-policy.md). If you escalate, also include the update you send the customer.)
+**Priority:** P2.
 
-### Workaround offered
+**Justification:** Multiple invoices in one customer batch are rejected while others are accepted. The issue also affects VAT audit preparation.
 
-### Prevention ideas
+**Investigation log:**
+* Reviewed the workbook and template rules.
+* Inspected services/api/internal/pint/pint.go.
+* Compared rounded net plus VAT with calculated gross.
+* Reproduced differences in invoices 0042, 0044 and 0046.
 
----
+**Root cause:** Gross is calculated from raw quantity and unit price, while net and VAT are rounded separately. This can cause BR-CO-15 mismatches.
 
-## Incident 2 — `inbox/02-alert-api-restarted-marina-bay.md`
+**Evidence:** evidence/al-noor-calculation.md and evidence/source-findings.md.
 
-### Acknowledgement
+**Customer reply:** The calculation review identified a rounding inconsistency. Please do not change quantities or prices manually. We are escalating the calculation defect and will confirm affected invoices before resubmission.
 
-- **Sent at (exercise clock):**
-- **Sent to:**
-- **Reply:**
+**Workaround:** Regenerate and validate only confirmed rejected invoices after the calculation is corrected.
 
-> …
+**Prevention:** Apply consistent rounding and add automated BR-CO-15 tests.
 
-### Priority and justification
+## 4. Bluepeak ERP – Sahara Medical
 
-- **Priority:**
-- **Why:**
-- **SLA deadlines I am working to:**
+**Acknowledgement:** HTTP 201 confirms that the portal accepted the import request, but it does not prove ASP delivery. Please do not resend the batch until reconciliation is complete.
 
-### Investigation log
+**Priority:** P1 provisional.
 
-| Time (exercise clock) | What I checked / did | What I found |
-|---|---|---|
-| | | |
+**Justification:** A 40-invoice batch has a reported delivery gap and several invoices have no ASP reference.
 
-### Root cause
+**Investigation log:**
+* Reviewed the ASP API documentation.
+* Inspected services/api/internal/submit/submit.go.
+* Reviewed the ASP rate limiter in services/asp-mock/main.go.
+* Found an unhandled HTTP 429 response path.
 
-- **What happened:**
-- **Where** (component, `file:line`):
-- **Why it happens:**
-- **Evidence:**
-- **Confidence and open questions:**
+**Root cause:** The code sets invoice status to Submitted before sending. It does not explicitly handle HTTP 429. The ASP mock has a burst limit of 8 and rate of 2 requests per second. This is a confirmed code defect, but its occurrence in this particular batch is not yet verified.
 
-### Customer resolution reply OR escalation note
+**Evidence:** evidence/source-findings.md.
 
-- **Which one and why:**
+**Customer reply:** We identified a possible rate-limit handling gap. We are checking portal statuses against ASP records. Please hold the batch and do not resend yet.
 
-> …
+**Workaround:** Retry only invoices confirmed absent from ASP records.
 
-### Workaround offered
+**Prevention:** Handle 429, honour Retry-After, implement backoff and monitor Submitted invoices without ASP references.
 
-### Prevention ideas
+## 5. Ghaf Tree Café
 
----
+**Acknowledgement:** Thank you for sharing the workbook. The date may be correct, but its format does not match the upload requirement.
 
-## Incident 3 — `inbox/03-al-noor-fuel-br-co-15.md`
+**Priority:** P3.
 
-### Acknowledgement
+**Justification:** One customer is affected by a documented input-format issue with a simple workaround.
 
-- **Sent at (exercise clock):**
-- **Reply:**
+**Investigation log:** Reviewed docs/template-field-guide.md. The required date format is YYYY-MM-DD or a genuine Excel date cell. The reported text value 13/11/2026 does not match the required format.
 
-> …
+**Root cause:** Unsupported date representation in the uploaded workbook.
 
-### Priority and justification
+**Customer reply:** Please change the text date to 2026-11-13 or use a genuine Excel date cell, then upload a corrected copy.
 
-- **Priority:**
-- **Why:**
-- **SLA deadlines I am working to:**
+**Workaround:** Correct the date format and validate the workbook before uploading again.
 
-### Investigation log
+**Prevention:** Provide a validated template and clearer date-format instructions.
 
-| Time (exercise clock) | What I checked / did | What I found |
-|---|---|---|
-| | | |
+## Overall Prioritisation
 
-### Root cause
+Marina Bay, Oasis and Bluepeak were treated as provisional P1 because of possible production or batch-level impact. Al Noor was P2 because a subset of invoices was rejected. Ghaf was P3 because it is a single-customer formatting issue.
 
-- **What happened:**
-- **Where** (component, `file:line`):
-- **Why it happens:**
-- **Evidence:**
-- **Confidence and open questions:**
+## What I would do differently
 
-### Customer resolution reply OR escalation note
+I would verify the local environment earlier and collect database, API and ASP evidence in parallel.
 
-- **Which one and why:**
+## What I learned
 
-> …
+I learned the difference between import completion and ASP submission, invoice lifecycle statuses, ASP rate limiting, and rounding requirements in e-invoicing. I would study Go worker queues, PostgreSQL queries, Grafana and PINT AE validation further.
 
-### Workaround offered
+## Time Log
 
-### Prevention ideas
+14 November 2026 – Repository setup, documentation and source-code review, workbook calculations and report preparation. Exact hours not recorded.
 
----
+## AI Usage Disclosure
 
-## Incident 4 — `inbox/04-bluepeak-sahara-not-received.md`
-
-### Acknowledgement
-
-- **Sent at (exercise clock):**
-- **Reply:**
-
-> …
-
-### Priority and justification
-
-- **Priority:**
-- **Why:**
-- **SLA deadlines I am working to:**
-
-### Investigation log
-
-| Time (exercise clock) | What I checked / did | What I found |
-|---|---|---|
-| | | |
-
-### Root cause
-
-- **What happened:**
-- **Where** (component, `file:line`):
-- **Why it happens:**
-- **Evidence:**
-- **Confidence and open questions:**
-
-### Customer resolution reply OR escalation note
-
-- **Which one and why:**
-
-> …
-
-### Workaround offered
-
-### Prevention ideas
-
----
-
-## Incident 5 — `inbox/05-ghaf-cafe-date-error.md`
-
-### Acknowledgement
-
-- **Sent at (exercise clock):**
-- **Reply:**
-
-> …
-
-### Priority and justification
-
-- **Priority:**
-- **Why:**
-- **SLA deadlines I am working to:**
-
-### Investigation log
-
-| Time (exercise clock) | What I checked / did | What I found |
-|---|---|---|
-| | | |
-
-### Root cause
-
-- **What happened:**
-- **Where** (component, `file:line`):
-- **Why it happens:**
-- **Evidence:**
-- **Confidence and open questions:**
-
-### Customer resolution reply OR escalation note
-
-- **Which one and why:**
-
-> …
-
-### Workaround offered
-
-### Prevention ideas
-
----
-
-## Overall
-
-### Prioritisation
-
-The order in which you worked the five items, and why. Did you change your mind as you learned more?
-
-### What I would do differently
-
-### What I learned / what I would need to learn
-
-Be specific: concepts, tools or parts of the system that were new to you, how you got up to speed, and what you would study next.
-
-### Time log (real time)
-
-| Date | From–to | What I worked on |
-|---|---|---|
-| | | |
-
-### AI usage disclosure
-
-Which tools you used (or "none"), what for, and how you checked their output against the system.
+I used ChatGPT to help interpret the supplied documentation and source code, calculate sample totals and draft customer replies. I checked findings against the repository and workbook. Docker image downloads did not complete, so live database, Grafana and container-log verification could not be performed. Unverified runtime findings are clearly identified.

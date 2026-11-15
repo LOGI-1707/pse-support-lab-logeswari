@@ -1,7 +1,7 @@
 # Submission – K. Logeswari
 
 - Date: 14 November 2026
-- Repository link: To be added
+- Repository link: https://github.com/LOGI-1707/pse-support-lab-logeswari
 - Total time spent: Not accurately recorded
 
 Date: 14 November 2026
